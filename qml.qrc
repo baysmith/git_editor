@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/git_editor/main.qml</file>
+    </qresource>
+</RCC>
