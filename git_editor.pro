@@ -20,4 +20,5 @@ RESOURCES += \
 OTHER_FILES += \
     qml/git_editor/main.qml \
     qml/git_editor/Draggable.qml \
-    qml/git_editor/CommitDelegate.qml
+    qml/git_editor/CommitDelegate.qml \
+    qml/git_editor/edit.qml

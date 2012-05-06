@@ -6,6 +6,14 @@ Rectangle {
     height: 360
     property string font: "DejaVu Sans Mono"
 
+    focus: true
+    Keys.priority: Keys.BeforeItem
+    Keys.onPressed: {
+        if (event.key === Qt.Key_Q && event.modifiers === Qt.ControlModifier) {
+            Qt.quit();
+        }
+    }
+
     Text {
         id: dummy_text
         text: "WWWWWW"
@@ -39,11 +47,5 @@ Rectangle {
         anchors.leftMargin: 5
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 5
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                Qt.quit();
-            }
-        }
     }
 }

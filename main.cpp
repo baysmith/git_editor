@@ -21,25 +21,17 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
 
     Mode mode = Unknown;
 
-    QScopedPointer<QTextEdit> textEdit;
+    QmlApplicationViewer *viewer = new QmlApplicationViewer;
+    viewer->setOrientation(QmlApplicationViewer::ScreenOrientationAuto);
+
     if (app->arguments()[1].endsWith("COMMIT_EDITMSG")) {
         mode = Edit;
         QFile file(app->arguments()[1]);
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
             return EXIT_FAILURE;
 
-        QWidget *widget = new QWidget;
-        QVBoxLayout *layout = new QVBoxLayout(widget);
-        layout->setContentsMargins(0, 0, 0, 0);
-        textEdit.reset(new QTextEdit);
-        textEdit->setPlainText(file.readAll());
-        textEdit->setLineWrapMode(QTextEdit::NoWrap);
-        textEdit->setFont(QFont("DejaVu Sans Mono"));
-        layout->addWidget(textEdit.data());
-        widget->resize(textEdit->document()->size().toSize()
-                       + QSize(textEdit->verticalScrollBar()->width(),
-                               textEdit->horizontalScrollBar()->height()));
-        widget->show();
+        viewer->rootContext()->setContextProperty("value", file.readAll());
+        viewer->setSource(QUrl("qrc:/qml/git_editor/edit.qml"));
     }
 
     QScopedPointer<RoleItemModel> commitModel;
@@ -73,18 +65,16 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
         }
         file.close();
 
-        QmlApplicationViewer *viewer = new QmlApplicationViewer;
-        viewer->setOrientation(QmlApplicationViewer::ScreenOrientationAuto);
         viewer->rootContext()->setContextProperty("commits", commitModel.data());
         viewer->rootContext()->setContextProperty("comments", comments.join("\n"));
-//        viewer->setMainQmlFile(app->applicationDirPath() + QLatin1String("/../qml/git_editor/main.qml"));
         viewer->setSource(QUrl("qrc:/qml/git_editor/main.qml"));
-        viewer->showExpanded();
     }
 
     if (mode == Unknown) {
         return EXIT_FAILURE;
     }
+
+    viewer->showExpanded();
 
     auto result = app->exec();
 
@@ -108,7 +98,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
             return EXIT_FAILURE;
 
         QTextStream out(&file);
-        out << textEdit->toPlainText();
+        out << QDeclarativeProperty::read(viewer->rootObject(), "text").toString();
     }
 
     return result;
