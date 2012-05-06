@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>qml/git_editor/main.qml</file>
+        <file>qml/git_editor/CommitDelegate.qml</file>
+        <file>qml/git_editor/Draggable.qml</file>
     </qresource>
 </RCC>
