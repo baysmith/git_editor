@@ -42,7 +42,7 @@ MouseArea {
         } else {
             if (held == true) {
                 if (newPosition < 1) {
-                    model.move(index,0);
+                    model.move(index, 0);
                 } else if (newPosition > listView.count - 1) {
                     model.move(index, listView.count - 1);
                 } else {

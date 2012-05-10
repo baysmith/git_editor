@@ -1,86 +1,76 @@
 #include "roleitemmodel.h"
 
+#include <QStringList>
 
-/* Example usage:
+RoleItemModel::RoleItemModel(QObject *parent) :
+    QAbstractListModel(parent)
+{
+    QHash<int, QByteArray> roles;
+    roles[Operation] = "operation";
+    roles[Sha] = "sha";
+    roles[Description] = "description";
 
-
-Enumerate the role ID's somewhere
----------------------------------
-
-struct RedditEntry {
-
-    enum RedditRoles {
-        UrlRole = Qt::UserRole + 1,
-        DescRole,
-        ...
-    };
-    ...
+    setRoleNames(roles);
 }
 
-Instantiate the class
----------------------
-
-
-    QHash<int, QByteArray> roleNames;
-    roleNames[RedditEntry::UrlRole] =  "url";
-    roleNames[RedditEntry::ScoreRole] = "score";
-    m_linksmodel = new RoleItemModel(roleNames);
-
-
-
-Populate with data:
--------------------
-
-    QStandardItem* it = new QStandardItem();
-    it->setData(e.desc, RedditEntry::DescRole);
-    it->setData(e.score, RedditEntry::ScoreRole);
-
-    m_linksmodel->appendRow(it);
-
-Expose to QML:
--------------
-
-QDeclarativeContext *ctx = ...
-
-ctx->setContextProperty("mdlLinks", m_linksmodel);
-
-*/
-
-
-RoleItemModel::RoleItemModel(const QHash<int, QByteArray> &roleNames)
+int RoleItemModel::rowCount(const QModelIndex &) const
 {
-    setRoleNames(roleNames);
+    return _items.size();
 }
 
-QVariantMap RoleItemModel::getModelData(const QAbstractItemModel* model, int row)
+QVariant RoleItemModel::data(const QModelIndex &index, int role) const
 {
-    QHash<int,QByteArray> names = model->roleNames();
-    QHashIterator<int, QByteArray> i(names);
-    QVariantMap res;
-    while (i.hasNext()) {
-        i.next();
-        QModelIndex idx = model->index(row, 0);
-        QVariant data = idx.data(i.key());
-        res[i.value()] = data;
+    if (!index.isValid() || index.row() >= _items.size())
+        return QVariant();
+
+    DataObject *dataObject = _items.at(index.row());
+    switch (role) {
+    case Operation:
+        return QVariant::fromValue(dataObject->operation);
+    case Sha:
+        return QVariant::fromValue(dataObject->sha);
+    case Qt::DisplayRole:
+    case Description:
+        return QVariant::fromValue(dataObject->description);
+    default:
+        return QVariant();
     }
-    return res;
+}
+
+void RoleItemModel::appendRow(DataObject* data)
+{
+    beginInsertRows(QModelIndex(), _items.size(), _items.size());
+    _items.append(data);
+    endInsertRows();
 }
 
 void RoleItemModel::move(int from, int to)
 {
-    auto item = takeRow(from);
-    insertRow(to, item);
+    if (from < 0 || to < 0 || from >= _items.size() || to >= _items.size())
+        return;
+
+    auto dest = to;
+    if (from < to)
+        ++dest;
+    beginMoveRows(QModelIndex(), from, from, QModelIndex(), dest);
+    _items.move(from, to);
+    endMoveRows();
 }
 
 void RoleItemModel::nextOperation(int row)
 {
+    if (row < 0 || row >= _items.size())
+        return;
+
     QStringList ops;
     ops << "pick" << "reword" << "edit" << "squash" << "fixup";
-    auto data = item(row);
-    QString op = data->data(Qt::UserRole + 1).toString();
+    auto& item = _items[row];
+    QString op = item->operation;
     auto index = ops.indexOf(op);
     ++index;
     if (index == ops.size())
         index = 0;
-    data->setData(ops.at(index), Qt::UserRole + 1);
+    item->description = ops.at(index);
+    auto rowIndex = this->index(row);
+    emit dataChanged(rowIndex, rowIndex);
 }

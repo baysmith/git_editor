@@ -42,25 +42,18 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
             return EXIT_FAILURE;
 
         QTextStream in(&file);
-        QHash<int, QByteArray> roles;
-        roles[Qt::UserRole + 1] = "operation";
-        roles[Qt::UserRole + 2] = "sha";
-        roles[Qt::UserRole + 3] = "description";
-        commitModel.reset(new RoleItemModel(roles));
+        commitModel.reset(new RoleItemModel);
         QStringList comments;
         while (!in.atEnd()) {
             QString line = in.readLine().trimmed();
             if (line.startsWith('#')) {
                 comments += line;
             } else if (!line.isEmpty()) {
-                QString operation = line.section(' ', 0, 0);
-                QString sha = line.section(' ', 1, 1);
-                QString description = line.section(' ', 2);
-                QStandardItem *row = new QStandardItem;
-                row->setData(operation, Qt::UserRole + 1);
-                row->setData(sha, Qt::UserRole + 2);
-                row->setData(description, Qt::UserRole + 3);
-                commitModel->appendRow(row);
+                auto data = new DataObject;
+                data->operation = line.section(' ', 0, 0);
+                data->sha = line.section(' ', 1, 1);
+                data->description = line.section(' ', 2);
+                commitModel->appendRow(data);
             }
         }
         file.close();
@@ -84,11 +77,11 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
             return EXIT_FAILURE;
 
         QTextStream out(&file);
-        for (int i = 0; i < commitModel->rowCount(); ++i) {
-            auto item = commitModel->item(i);
-            QString operation = item->data(Qt::UserRole + 1).toString();
-            QString sha = item->data(Qt::UserRole + 2).toString();
-            QString description = item->data(Qt::UserRole + 3).toString();
+        for (int row = 0; row < commitModel->rowCount(); ++row) {
+            QModelIndex index = commitModel->index(row);
+            QString operation = commitModel->data(index, RoleItemModel::Operation).toString();
+            QString sha = commitModel->data(index, RoleItemModel::Sha).toString();
+            QString description = commitModel->data(index, RoleItemModel::Description).toString();
             qDebug() << operation << sha << description;
             out << operation << ' ' << sha << ' ' << description << '\n';
         }
