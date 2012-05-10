@@ -1,8 +1,8 @@
-#include "roleitemmodel.h"
+#include "CommitModel.h"
 
 #include <QStringList>
 
-RoleItemModel::RoleItemModel(QObject *parent) :
+CommitModel::CommitModel(QObject *parent) :
     QAbstractListModel(parent)
 {
     QHash<int, QByteArray> roles;
@@ -13,12 +13,12 @@ RoleItemModel::RoleItemModel(QObject *parent) :
     setRoleNames(roles);
 }
 
-int RoleItemModel::rowCount(const QModelIndex &) const
+int CommitModel::rowCount(const QModelIndex &) const
 {
     return _items.size();
 }
 
-QVariant RoleItemModel::data(const QModelIndex &index, int role) const
+QVariant CommitModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid() || index.row() >= _items.size())
         return QVariant();
@@ -37,14 +37,14 @@ QVariant RoleItemModel::data(const QModelIndex &index, int role) const
     }
 }
 
-void RoleItemModel::appendRow(DataObject* data)
+void CommitModel::appendRow(DataObject* data)
 {
     beginInsertRows(QModelIndex(), _items.size(), _items.size());
     _items.append(data);
     endInsertRows();
 }
 
-void RoleItemModel::move(int from, int to)
+void CommitModel::move(int from, int to)
 {
     if (from < 0 || to < 0 || from >= _items.size() || to >= _items.size())
         return;
@@ -57,7 +57,7 @@ void RoleItemModel::move(int from, int to)
     endMoveRows();
 }
 
-void RoleItemModel::nextOperation(int row)
+void CommitModel::nextOperation(int row)
 {
     if (row < 0 || row >= _items.size())
         return;

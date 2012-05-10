@@ -1,6 +1,6 @@
 #include <QApplication>
 #include "qmlapplicationviewer.h"
-#include "roleitemmodel.h"
+#include "CommitModel.h"
 #include <QtCore>
 #include <QtGui>
 #include <QtDeclarative>
@@ -34,7 +34,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
         viewer->setSource(QUrl("qrc:/qml/git_editor/edit.qml"));
     }
 
-    QScopedPointer<RoleItemModel> commitModel;
+    QScopedPointer<CommitModel> commitModel;
     if (app->arguments()[1].endsWith("git-rebase-todo")) {
         mode = Rebase;
         QFile file(app->arguments()[1]);
@@ -42,7 +42,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
             return EXIT_FAILURE;
 
         QTextStream in(&file);
-        commitModel.reset(new RoleItemModel);
+        commitModel.reset(new CommitModel);
         QStringList comments;
         while (!in.atEnd()) {
             QString line = in.readLine().trimmed();
@@ -79,9 +79,9 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
         QTextStream out(&file);
         for (int row = 0; row < commitModel->rowCount(); ++row) {
             QModelIndex index = commitModel->index(row);
-            QString operation = commitModel->data(index, RoleItemModel::Operation).toString();
-            QString sha = commitModel->data(index, RoleItemModel::Sha).toString();
-            QString description = commitModel->data(index, RoleItemModel::Description).toString();
+            QString operation = commitModel->data(index, CommitModel::Operation).toString();
+            QString sha = commitModel->data(index, CommitModel::Sha).toString();
+            QString description = commitModel->data(index, CommitModel::Description).toString();
             qDebug() << operation << sha << description;
             out << operation << ' ' << sha << ' ' << description << '\n';
         }

@@ -8,14 +8,14 @@ QML_IMPORT_PATH =
 CONFIG += console
 
 SOURCES += main.cpp \
-    roleitemmodel.cpp
+    CommitModel.cpp
 
 # Please do not modify the following two lines. Required for deployment.
 include(qmlapplicationviewer/qmlapplicationviewer.pri)
 qtcAddDeployment()
 
 HEADERS += \
-    roleitemmodel.h
+    CommitModel.h
 
 RESOURCES += \
     qml.qrc

@@ -1,5 +1,5 @@
-#ifndef ROLEITEMMODEL_H
-#define ROLEITEMMODEL_H
+#ifndef CommitModel_h
+#define CommitModel_h
 
 #include <QAbstractListModel>
 
@@ -10,7 +10,7 @@ struct DataObject
     QString description;
 };
 
-class RoleItemModel : public QAbstractListModel {
+class CommitModel : public QAbstractListModel {
     Q_OBJECT
 public:
 
@@ -20,7 +20,7 @@ public:
         Description
     };
 
-    RoleItemModel(QObject *parent = 0);
+    CommitModel(QObject *parent = 0);
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     void appendRow(DataObject *data);
@@ -33,4 +33,4 @@ private:
     QList<DataObject*> _items;
 };
 
-#endif // ROLEITEMMODEL_H
+#endif // CommitModel_h
