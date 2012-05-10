@@ -23,7 +23,6 @@ Rectangle {
 
     ListView {
         id: commitList
-        interactive: false
         model: commits
         delegate: CommitDelegate {
             listView: commitList
@@ -31,7 +30,7 @@ Rectangle {
             fontFamily: main.font
             mouseArea: loc
         }
-//        clip: true
+        clip: true
         anchors.right: parent.right
         anchors.rightMargin: 5
         anchors.left: parent.left

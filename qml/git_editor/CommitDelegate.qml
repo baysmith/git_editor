@@ -22,6 +22,11 @@ Rectangle {
             text: index
             width: 10
             font.family: fontFamily
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                }
+            }
         }
         Text {
             text: operation
@@ -57,6 +62,17 @@ Rectangle {
             id: descriptionText
             text: description
             font.family: fontFamily
+            MouseArea {
+                anchors.fill: parent
+                onDoubleClicked: {
+                    if (index != 0) {
+                        commits.move(index, 0);
+                    }
+                }
+                onPressed: {
+                    mouse.accepted = false;
+                }
+            }
         }
     }
     Behavior on x { NumberAnimation { duration: 400; easing.type: Easing.OutBack } }
