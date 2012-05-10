@@ -87,6 +87,8 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
             QString sha = commitModel->data(index, CommitModel::Sha).toString();
             QString description = commitModel->data(index, CommitModel::Description).toString();
             qDebug() << operation << sha << description;
+            if (operation == "DELETE")
+                continue;
             out << operation << ' ' << sha << ' ' << description << '\n';
         }
     } else if (mode == Edit) {

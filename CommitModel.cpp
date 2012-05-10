@@ -63,7 +63,7 @@ void CommitModel::nextOperation(int row)
         return;
 
     QStringList ops;
-    ops << "pick" << "reword" << "edit" << "squash" << "fixup";
+    ops << "pick" << "reword" << "edit" << "squash" << "fixup" << "DELETE";
     auto& item = _items[row];
     QString op = item->operation;
     auto index = ops.indexOf(op);
