@@ -23,21 +23,21 @@ QVariant CommitModel::data(const QModelIndex &index, int role) const
     if (!index.isValid() || index.row() >= _items.size())
         return QVariant();
 
-    DataObject *dataObject = _items.at(index.row());
+    const auto &item = _items.at(index.row());
     switch (role) {
     case Operation:
-        return QVariant::fromValue(dataObject->operation);
+        return QVariant::fromValue(item->operation);
     case Sha:
-        return QVariant::fromValue(dataObject->sha);
+        return QVariant::fromValue(item->sha);
     case Qt::DisplayRole:
     case Description:
-        return QVariant::fromValue(dataObject->description);
+        return QVariant::fromValue(item->description);
     default:
         return QVariant();
     }
 }
 
-void CommitModel::appendRow(DataObject* data)
+void CommitModel::appendRow(QSharedPointer<DataObject> data)
 {
     beginInsertRows(QModelIndex(), _items.size(), _items.size());
     _items.append(data);
@@ -70,7 +70,19 @@ void CommitModel::nextOperation(int row)
     ++index;
     if (index == ops.size())
         index = 0;
-    item->description = ops.at(index);
+    item->operation = ops.at(index);
     auto rowIndex = this->index(row);
     emit dataChanged(rowIndex, rowIndex);
+}
+
+QVariantMap CommitModel::get(int row)
+{
+    QVariantMap map;
+    if (row >= 0 && row < _items.size()) {
+        const auto &item = _items[row];
+        map["operation"] = item->operation;
+        map["sha"] = item->sha;
+        map["description"] = item->description;
+    }
+    return map;
 }

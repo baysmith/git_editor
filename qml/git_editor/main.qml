@@ -23,13 +23,15 @@ Rectangle {
 
     ListView {
         id: commitList
+        interactive: false
         model: commits
         delegate: CommitDelegate {
             listView: commitList
             model: commits
             fontFamily: main.font
+            mouseArea: loc
         }
-        clip: true
+//        clip: true
         anchors.right: parent.right
         anchors.rightMargin: 5
         anchors.left: parent.left
@@ -37,6 +39,46 @@ Rectangle {
         anchors.top: parent.top
         anchors.topMargin: 5
         anchors.bottom: commentsText.top
+
+        MouseArea {
+            id: loc
+            // Original position in model
+            property string currentId: "none"
+            // Current Position in model
+            property int newIndex
+            // Item underneath cursor
+            property int index: -1
+            drag.target: loc
+            drag.axis: Drag.YAxis
+            anchors.fill: parent
+            function updateIndex() {
+                index = commitList.indexAt(mouseX, mouseY + commitList.contentY);
+            }
+            function updateCurrentId() {
+                currentId = commits.get(newIndex = index).sha;
+            }
+            onPressed: {
+                updateIndex();
+            }
+            onPressAndHold: {
+                updateIndex();
+                updateCurrentId();
+            }
+            onReleased: {
+                currentId = "none";
+            }
+            onMousePositionChanged: {
+                if (drag.active && currentId == "none") {
+                    updateCurrentId();
+                }
+                if (currentId != "none") {
+                    updateIndex();
+                    if (index != -1 && index != newIndex) {
+                        commits.move(newIndex, newIndex = index);
+                    }
+                }
+            }
+        }
     }
     Text {
         id: commentsText

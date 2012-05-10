@@ -2,6 +2,8 @@
 #define CommitModel_h
 
 #include <QAbstractListModel>
+#include <QList>
+#include <QSharedPointer>
 
 struct DataObject
 {
@@ -23,14 +25,15 @@ public:
     CommitModel(QObject *parent = 0);
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
-    void appendRow(DataObject *data);
+    void appendRow(QSharedPointer<DataObject> data);
 
 public slots:
     void move(int index, int from);
     void nextOperation(int row);
+    QVariantMap get(int row);
 
 private:
-    QList<DataObject*> _items;
+    QList<QSharedPointer<DataObject> > _items;
 };
 
 #endif // CommitModel_h

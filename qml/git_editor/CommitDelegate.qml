@@ -3,15 +3,19 @@ import QtQuick 1.1
 Rectangle {
     id: commitDelegateBorder
     property variant listView
+    property variant mouseArea
     property variant model
     property string fontFamily: "DejaVu Sans Mono"
     width: listView.width
-    height: descriptionText.height
+    height: item.height
 
-    Draggable {
-        dragItem: parent
-        listView: parent.listView
-    }
+    Item {
+        id: item
+        parent: loc
+        x: commitDelegateBorder.x
+        y: commitDelegateBorder.y - listView.contentY
+        width: commitDelegateBorder.width
+        height: descriptionText.height
     Row {
         spacing: 5
         Text {
@@ -33,12 +37,15 @@ Rectangle {
         Text {
             text: sha
             font.family: fontFamily
-            Draggable {
-                dragItem: commitDelegateBorder
-                activateOnPressed: true
-                listView: commitDelegateBorder.listView
+            MouseArea {
+                anchors.fill: parent
                 onDoubleClicked: {
-                    commits.move(index, 0);
+                    if (index != 0) {
+                        commits.move(index, 0);
+                    }
+                }
+                onPressed: {
+                    mouse.accepted = false;
                 }
             }
         }
@@ -51,5 +58,19 @@ Rectangle {
             text: description
             font.family: fontFamily
         }
+    }
+    Behavior on x { NumberAnimation { duration: 400; easing.type: Easing.OutBack } }
+    Behavior on y { enabled: item.state != "active"; NumberAnimation { duration: 400; easing.type: Easing.OutBack } }
+    states: State {
+        name: "active"
+        when: mouseArea.currentId == sha
+        PropertyChanges {
+            target: item
+            x: commitDelegateBorder.x + 30
+            y: Math.max(0, Math.min(mouseArea.mouseY - height/2,
+                                    mouseArea.height - height))
+            z: 10
+        }
+    }
     }
 }

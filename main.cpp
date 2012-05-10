@@ -21,7 +21,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
 
     Mode mode = Unknown;
 
-    QmlApplicationViewer *viewer = new QmlApplicationViewer;
+    QScopedPointer<QmlApplicationViewer> viewer(new QmlApplicationViewer);
     viewer->setOrientation(QmlApplicationViewer::ScreenOrientationAuto);
 
     if (app->arguments()[1].endsWith("COMMIT_EDITMSG")) {
@@ -41,6 +41,9 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
             return EXIT_FAILURE;
 
+        QStringList listModel;
+        listModel << "import QtQuick 1.1";
+        listModel << "ListModel {";
         QTextStream in(&file);
         commitModel.reset(new CommitModel);
         QStringList comments;
@@ -49,7 +52,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
             if (line.startsWith('#')) {
                 comments += line;
             } else if (!line.isEmpty()) {
-                auto data = new DataObject;
+                QSharedPointer<DataObject> data(new DataObject);
                 data->operation = line.section(' ', 0, 0);
                 data->sha = line.section(' ', 1, 1);
                 data->description = line.section(' ', 2);
@@ -57,6 +60,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
             }
         }
         file.close();
+        listModel << "}";
 
         viewer->rootContext()->setContextProperty("commits", commitModel.data());
         viewer->rootContext()->setContextProperty("comments", comments.join("\n"));
