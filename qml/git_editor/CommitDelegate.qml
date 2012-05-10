@@ -25,7 +25,7 @@ Rectangle {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    pushToIndex = pushToIndex == index ? -1 : index;
+                    pushToIndex = (pushToIndex == index) ? -1 : index;
                 }
             }
         }

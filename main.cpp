@@ -81,8 +81,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
             return EXIT_FAILURE;
 
         QString pushToSha;
-        int pushToIndex = viewer->rootContext()->contextProperty("pushToIndex").toInt();
-
+        int pushToIndex = viewer->rootObject()->property("pushToIndex").toInt();
         QTextStream out(&file);
         for (int row = 0; row < commitModel->rowCount(); ++row) {
             QModelIndex index = commitModel->index(row);
