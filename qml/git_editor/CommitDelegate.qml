@@ -21,11 +21,22 @@ Rectangle {
         Image {
             height: 16
             width: 16
-            source: pushToIndex == index ? "server_from_client.png" : "";
+            property bool highlight: false
+            source: (pushToIndex == index || highlight)
+                    ? "server_from_client.png"
+                    : "";
+            opacity: (pushToIndex != index && highlight) ? 0.5 : 1.0
             MouseArea {
                 anchors.fill: parent
+                hoverEnabled: true
                 onClicked: {
                     pushToIndex = (pushToIndex == index) ? -1 : index;
+                }
+                onEntered: {
+                    parent.highlight = true
+                }
+                onExited: {
+                    parent.highlight = false
                 }
             }
         }
