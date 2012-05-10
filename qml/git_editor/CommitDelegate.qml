@@ -15,9 +15,20 @@ Rectangle {
         x: commitDelegateBorder.x
         y: commitDelegateBorder.y - listView.contentY
         width: commitDelegateBorder.width
-        height: descriptionText.height
+        height: Math.max(16, descriptionText.height)
     Row {
         spacing: 5
+        Image {
+            height: 16
+            width: 16
+            source: pushToIndex == index ? "server_from_client.png" : "";
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    pushToIndex = pushToIndex == index ? -1 : index;
+                }
+            }
+        }
         Text {
             text: index
             width: 10
