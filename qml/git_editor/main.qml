@@ -5,7 +5,6 @@ Rectangle {
     width: 360
     height: 360
     property string font: "DejaVu Sans Mono"
-    property int pushToIndex: -1
 
     focus: true
     Keys.priority: Keys.BeforeItem
@@ -30,6 +29,11 @@ Rectangle {
             model: commits
             fontFamily: main.font
             mouseArea: loc
+            Component.onCompleted: {
+                if (implicitWidth + 10 > main.width) {
+                    main.width = implicitWidth + 10
+                }
+            }
         }
         clip: true
         anchors.right: parent.right

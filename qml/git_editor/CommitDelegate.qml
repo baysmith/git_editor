@@ -8,6 +8,8 @@ Item {
     property string fontFamily: "DejaVu Sans Mono"
     width: listView.width
     height: item.height
+    implicitWidth: commitDelegateBorder.x + rowPart1.width + row.spacing + descriptionText.implicitWidth
+    implicitHeight: descriptionText.implicitHeight
 
     Rectangle {
         id: item
@@ -15,7 +17,7 @@ Item {
         x: commitDelegateBorder.x
         y: commitDelegateBorder.y - listView.contentY
         width: commitDelegateBorder.width
-        height: Math.max(16, descriptionText.height)
+        height: descriptionText.implicitHeight
         color: hoverArea.containsMouse ? "#e8eff3" : "transparent"
 
         MouseArea {
@@ -27,67 +29,59 @@ Item {
             }
         }
         Row {
+            id: row
             spacing: 5
-            Image {
-                height: 16
-                width: 16
-                source: (pushToIndex == index || imageHover.containsMouse)
-                        ? "server_from_client.png"
-                        : "";
-                opacity: (pushToIndex != index && imageHover.containsMouse) ? 0.5 : 1.0
-                MouseArea {
-                    id: imageHover
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: {
-                        pushToIndex = (pushToIndex == index) ? -1 : index;
-                    }
-                }
-            }
-            Text {
-                text: index
-                width: 10
-                font.family: fontFamily
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                    }
-                }
-            }
-            Text {
-                text: operation
-                width: dummy_text.width
-                font.family: fontFamily
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        commits.nextOperation(index);
-                    }
-                }
-            }
-            Text {
-                text: sha
-                font.family: fontFamily
-                MouseArea {
-                    anchors.fill: parent
-                    onDoubleClicked: {
-                        if (index != 0) {
-                            commits.move(index, 0);
+            width: parent.width
+            Row {
+                id: rowPart1
+                spacing: 5
+                Text {
+                    text: index
+                    width: 10
+                    font.family: fontFamily
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
                         }
                     }
-                    onPressed: {
-                        mouse.accepted = false;
+                }
+                Text {
+                    text: operation
+                    width: dummy_text.width
+                    font.family: fontFamily
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            commits.nextOperation(index);
+                        }
                     }
                 }
-            }
-            Item {
-                width: 5
-                height: 1
+                Text {
+                    text: sha
+                    font.family: fontFamily
+                    MouseArea {
+                        anchors.fill: parent
+                        onDoubleClicked: {
+                            if (index != 0) {
+                                commits.move(index, 0);
+                            }
+                        }
+                        onPressed: {
+                            mouse.accepted = false;
+                        }
+                    }
+                }
+                Item {
+                    width: 5
+                    height: 1
+                }
             }
             Text {
                 id: descriptionText
                 text: description
                 font.family: fontFamily
+                width: parent.width - rowPart1.width - parent.spacing
+                wrapMode: Text.WordWrap
                 MouseArea {
                     anchors.fill: parent
                     onDoubleClicked: {

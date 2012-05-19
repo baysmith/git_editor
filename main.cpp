@@ -80,8 +80,6 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
         if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
             return EXIT_FAILURE;
 
-        QString pushToSha;
-        int pushToIndex = viewer->rootObject()->property("pushToIndex").toInt();
         QTextStream out(&file);
         for (int row = 0; row < commitModel->rowCount(); ++row) {
             QModelIndex index = commitModel->index(row);
@@ -92,14 +90,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
             if (operation == "DELETE")
                 continue;
             out << operation << ' ' << sha << ' ' << description << '\n';
-            if (row == pushToIndex)
-                pushToSha = sha;
         }
-        if (!pushToSha.isEmpty()) {
-            qDebug() << "push to" << pushToSha;
-            QProcess::startDetached("git", QStringList() << "pmt" << pushToSha);
-        }
-
     } else if (mode == Edit) {
         QFile file(app->arguments()[1]);
         if (!file.open(QIODevice::WriteOnly | QIODevice::Text))

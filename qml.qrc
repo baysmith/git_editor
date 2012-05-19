@@ -4,6 +4,5 @@
         <file>qml/git_editor/CommitDelegate.qml</file>
         <file>qml/git_editor/Draggable.qml</file>
         <file>qml/git_editor/edit.qml</file>
-        <file>qml/git_editor/server_from_client.png</file>
     </qresource>
 </RCC>
