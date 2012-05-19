@@ -71,6 +71,10 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    auto desktop = QApplication::desktop();
+    auto x = (desktop->width() - viewer->width()) / 2;
+    auto y = (desktop->height() - viewer->height()) / 2;
+    viewer->move(x, y);
     viewer->showExpanded();
 
     auto result = app->exec();
