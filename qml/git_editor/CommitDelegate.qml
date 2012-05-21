@@ -35,6 +35,28 @@ Item {
             Row {
                 id: rowPart1
                 spacing: 5
+                Item {
+                    // Graphical line-dot for commits
+                    width: 8
+                    height: commitDelegateBorder.height
+                    Rectangle {
+                        x: 2.5
+                        width: 2.5
+                        // If last item, only show top part of line.
+                        height: (index+1 != listView.count)
+                                ? commitDelegateBorder.height
+                                : 3
+                        color: "black"
+                    }
+                    Rectangle {
+                        y: 2
+                        width: 7
+                        height: 7
+                        radius: 3.5
+                        color: "yellow"
+                        border.color: "#0000ff"
+                    }
+                }
                 Text {
                     text: index
                     width: 10

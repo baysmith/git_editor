@@ -75,6 +75,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
     auto x = (desktop->width() - viewer->width()) / 2;
     auto y = (desktop->height() - viewer->height()) / 2;
     viewer->move(x, y);
+    viewer->setWindowIcon(QIcon(":/icon.png"));
     viewer->showExpanded();
 
     auto result = app->exec();

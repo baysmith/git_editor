@@ -53,7 +53,6 @@ Rectangle {
             // Item underneath cursor
             property int index: -1
             drag.target: loc
-            drag.axis: Drag.YAxis
             anchors.fill: parent
             function updateIndex() {
                 index = commitList.indexAt(mouseX, mouseY + commitList.contentY);
