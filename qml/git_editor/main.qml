@@ -2,7 +2,7 @@ import QtQuick 1.1
 
 Rectangle {
     id: main
-    width: 360
+    width: Math.min(commitList.implicitWidth + 10, 800)
     height: 360
     property string font: "DejaVu Sans Mono"
 
@@ -14,24 +14,18 @@ Rectangle {
         }
     }
 
-    Text {
-        id: dummy_text
-        text: "WWWWWW"
-        visible: false
-        font.family: main.font
-    }
-
     ListView {
         id: commitList
         model: commits
+        property int implicitWidth: 0
         delegate: CommitDelegate {
             listView: commitList
             model: commits
             fontFamily: main.font
             mouseArea: loc
             Component.onCompleted: {
-                if (implicitWidth + 10 > main.width) {
-                    main.width = implicitWidth + 10
+                if (implicitWidth > commitList.implicitWidth) {
+                    commitList.implicitWidth = implicitWidth
                 }
             }
         }

@@ -8,7 +8,7 @@ Item {
     property string fontFamily: "DejaVu Sans Mono"
     width: listView.width
     height: item.height
-    implicitWidth: commitDelegateBorder.x + rowPart1.width + row.spacing + descriptionText.implicitWidth
+    implicitWidth: commitDelegateBorder.x + row.implicitWidth
     implicitHeight: descriptionText.implicitHeight
 
     Rectangle {
@@ -32,6 +32,7 @@ Item {
             id: row
             spacing: 5
             width: parent.width
+            property int implicitWidth: rowPart1.width + spacing + descriptionText.implicitWidth
             Row {
                 id: rowPart1
                 spacing: 5
@@ -59,23 +60,35 @@ Item {
                 }
                 Text {
                     text: index
-                    width: 10
+                    width: index_text.width
                     font.family: fontFamily
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
                         }
                     }
+                    Text {
+                        id: index_text
+                        text: "000"
+                        font.family: fontFamily
+                        visible: false
+                    }
                 }
                 Text {
                     text: operation
-                    width: dummy_text.width
+                    width: op_text.width
                     font.family: fontFamily
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
                             commits.nextOperation(index);
                         }
+                    }
+                    Text {
+                        id: op_text
+                        text: "WWWWWW"
+                        font.family: fontFamily
+                        visible: false
                     }
                 }
                 Text {
