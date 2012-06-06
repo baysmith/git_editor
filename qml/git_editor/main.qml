@@ -14,6 +14,11 @@ Rectangle {
         }
     }
 
+    Component.onCompleted: {
+        height = Math.min(commitList.contentHeight + commentsText.height + 30,
+                          800)
+    }
+
     ListView {
         id: commitList
         model: commits
