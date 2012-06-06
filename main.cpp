@@ -41,9 +41,6 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
             return EXIT_FAILURE;
 
-        QStringList listModel;
-        listModel << "import QtQuick 1.1";
-        listModel << "ListModel {";
         QTextStream in(&file);
         commitModel.reset(new CommitModel);
         QStringList comments;
@@ -60,11 +57,11 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
             }
         }
         file.close();
-        listModel << "}";
 
         viewer->rootContext()->setContextProperty("commits", commitModel.data());
         viewer->rootContext()->setContextProperty("comments", comments.join("\n"));
         viewer->setSource(QUrl("qrc:/qml/git_editor/main.qml"));
+//        viewer->setSource(QUrl::fromLocalFile(app->applicationDirPath() + "/qml/git_editor/main.qml"));
     }
 
     if (mode == Unknown) {
@@ -72,8 +69,9 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
     }
 
     auto desktop = QApplication::desktop();
-    auto x = (desktop->width() - viewer->width()) / 2;
-    auto y = (desktop->height() - viewer->height()) / 2;
+    auto geom = desktop->availableGeometry(QCursor::pos());
+    auto x = geom.x() + (geom.width() - viewer->width()) / 2;
+    auto y = geom.y() + (geom.height() - viewer->height()) / 2;
     viewer->move(x, y);
     viewer->setWindowIcon(QIcon(":/icon.png"));
     viewer->showExpanded();
