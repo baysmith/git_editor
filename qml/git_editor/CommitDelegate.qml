@@ -131,7 +131,10 @@ Item {
             }
         }
         Behavior on x { NumberAnimation { duration: 400; easing.type: Easing.OutBack } }
-        Behavior on y { enabled: item.state != "active"; NumberAnimation { duration: 400; easing.type: Easing.OutBack } }
+        Behavior on y {
+            enabled: main.ready && item.state != "active"
+            NumberAnimation { duration: 400; easing.type: Easing.OutBack }
+        }
         states: State {
             name: "active"
             when: mouseArea.currentId == sha

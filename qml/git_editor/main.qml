@@ -5,6 +5,7 @@ Rectangle {
     width: Math.min(commitList.implicitWidth + 10, 800)
     height: 360
     property string font: "DejaVu Sans Mono"
+    property bool ready: false
 
     focus: true
     Keys.priority: Keys.BeforeItem
@@ -16,7 +17,18 @@ Rectangle {
 
     Component.onCompleted: {
         height = Math.min(commitList.contentHeight + commentsText.height + 30,
-                          800)
+                          800);
+        initTimer.start();
+    }
+
+    Timer {
+        id: initTimer
+        interval: 1
+        running: false
+        repeat: false
+        onTriggered: {
+            ready = true;
+        }
     }
 
     ListView {
@@ -30,7 +42,7 @@ Rectangle {
             mouseArea: loc
             Component.onCompleted: {
                 if (implicitWidth > commitList.implicitWidth) {
-                    commitList.implicitWidth = implicitWidth
+                    commitList.implicitWidth = implicitWidth;
                 }
             }
         }
