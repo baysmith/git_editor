@@ -5,12 +5,19 @@
 CommitModel::CommitModel(QObject *parent) :
     QAbstractListModel(parent)
 {
-    QHash<int, QByteArray> roles;
-    roles[Operation] = "operation";
-    roles[Sha] = "sha";
-    roles[Description] = "description";
+}
 
-    setRoleNames(roles);
+QHash<int, QByteArray> CommitModel::roleNames() const
+{
+    static QHash<int, QByteArray> roles = []()
+    {
+        QHash<int, QByteArray> roles;
+        roles[Operation] = "operation";
+        roles[Sha] = "sha";
+        roles[Description] = "description";
+        return roles;
+    }();
+    return roles;
 }
 
 int CommitModel::rowCount(const QModelIndex &) const

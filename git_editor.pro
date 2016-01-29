@@ -1,18 +1,10 @@
-unix {
-QMAKE_CXXFLAGS += -std=c++0x
-}
+TEMPLATE = app
 
-# Additional import path used to resolve QML modules in Creator's code model
-QML_IMPORT_PATH =
-
-CONFIG += console
+QT += qml quick
+CONFIG += console c++11
 
 SOURCES += main.cpp \
     CommitModel.cpp
-
-# Please do not modify the following two lines. Required for deployment.
-include(qmlapplicationviewer/qmlapplicationviewer.pri)
-qtcAddDeployment()
 
 HEADERS += \
     CommitModel.h
@@ -25,3 +17,9 @@ OTHER_FILES += \
     qml/git_editor/Draggable.qml \
     qml/git_editor/CommitDelegate.qml \
     qml/git_editor/edit.qml
+
+# Additional import path used to resolve QML modules in Qt Creator's code model
+QML_IMPORT_PATH =
+
+# Default rules for deployment.
+include(deployment.pri)

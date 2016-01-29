@@ -1,9 +1,14 @@
-#include <QApplication>
-#include "qmlapplicationviewer.h"
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 #include "CommitModel.h"
-#include <QtCore>
-#include <QtGui>
-#include <QtDeclarative>
+#include <QtCore/QDebug>
+#include <QtCore/QFile>
+#include <QtGui/QGuiApplication>
+#include <QtQml/QQmlApplicationEngine>
+#include <QtQml/QQmlContext>
+#include <QtQml/QQmlProperty>
 
 enum Mode {
     Unknown,
@@ -11,9 +16,9 @@ enum Mode {
     Edit
 };
 
-Q_DECL_EXPORT int main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-    QScopedPointer<QApplication> app(createApplication(argc, argv));
+    QScopedPointer<QGuiApplication> app(new QGuiApplication(argc, argv));
 
     qDebug() << app->arguments();
     if (app->arguments().size() < 2)
@@ -21,8 +26,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
 
     Mode mode = Unknown;
 
-    QScopedPointer<QmlApplicationViewer> viewer(new QmlApplicationViewer);
-    viewer->setOrientation(QmlApplicationViewer::ScreenOrientationAuto);
+    QScopedPointer<QQmlApplicationEngine> engine(new QQmlApplicationEngine);
 
     if (app->arguments()[1].endsWith("COMMIT_EDITMSG")) {
         mode = Edit;
@@ -30,8 +34,8 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
             return EXIT_FAILURE;
 
-        viewer->rootContext()->setContextProperty("value", file.readAll());
-        viewer->setSource(QUrl("qrc:/qml/git_editor/edit.qml"));
+        engine->rootContext()->setContextProperty("value", file.readAll());
+        engine->load(QUrl(QStringLiteral("qrc:/qml/git_editor/edit.qml")));
     }
 
     QScopedPointer<CommitModel> commitModel;
@@ -58,23 +62,14 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
         }
         file.close();
 
-        viewer->rootContext()->setContextProperty("commits", commitModel.data());
-        viewer->rootContext()->setContextProperty("comments", comments.join("\n"));
-        viewer->setSource(QUrl("qrc:/qml/git_editor/main.qml"));
-//        viewer->setSource(QUrl::fromLocalFile(app->applicationDirPath() + "/qml/git_editor/main.qml"));
+        engine->rootContext()->setContextProperty("commits", commitModel.data());
+        engine->rootContext()->setContextProperty("comments", comments.join("\n"));
+        engine->load(QUrl(QStringLiteral("qrc:/qml/git_editor/main.qml")));
     }
 
     if (mode == Unknown) {
         return EXIT_FAILURE;
     }
-
-    auto desktop = QApplication::desktop();
-    auto geom = desktop->availableGeometry(QCursor::pos());
-    auto x = geom.x() + (geom.width() - viewer->width()) / 2;
-    auto y = geom.y() + (geom.height() - viewer->height()) / 2;
-    viewer->move(x, y);
-    viewer->setWindowIcon(QIcon(":/icon.png"));
-    viewer->showExpanded();
 
     auto result = app->exec();
 
@@ -100,7 +95,9 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
             return EXIT_FAILURE;
 
         QTextStream out(&file);
-        out << QDeclarativeProperty::read(viewer->rootObject(), "text").toString();
+        auto rootObject = engine->rootObjects()[0];
+        auto textEdit = rootObject->findChild<QObject*>("textEdit");
+        out << QQmlProperty::read(textEdit, "text").toString();
     }
 
     return result;
