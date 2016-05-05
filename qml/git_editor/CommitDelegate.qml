@@ -1,4 +1,5 @@
 import QtQuick 2.5
+import QtQuick.Controls 1.4
 
 Item {
     id: commitDelegateBorder
@@ -10,6 +11,23 @@ Item {
     height: item.height
     implicitWidth: commitDelegateBorder.x + row.implicitWidth
     implicitHeight: descriptionText.implicitHeight
+
+    focus: true
+    Keys.onPressed: {
+        if (event.key === Qt.Key_P) {
+            commits.setOperation(index, "pick");
+        } else if (event.key === Qt.Key_R) {
+            commits.setOperation(index, "reword");
+        } else if (event.key === Qt.Key_E) {
+            commits.setOperation(index, "edit");
+        } else if (event.key === Qt.Key_S) {
+            commits.setOperation(index, "squash");
+        } else if (event.key === Qt.Key_F) {
+            commits.setOperation(index, "fixup");
+        } else if (event.key === Qt.Key_D) {
+            commits.setOperation(index, "DELETE");
+        }
+    }
 
     Rectangle {
         id: item
@@ -26,6 +44,9 @@ Item {
             hoverEnabled: true
             onPressed: {
                 mouse.accepted = false;
+            }
+            onEntered: {
+                commitDelegateBorder.forceActiveFocus();
             }
         }
         Row {

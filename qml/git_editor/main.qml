@@ -116,5 +116,14 @@ Window {
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 5
         }
+        Button {
+            text: "Abort"
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            onClicked: {
+                commits.abort = true;
+                Qt.quit();
+            }
+        }
     }
 }

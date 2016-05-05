@@ -3,7 +3,7 @@
 #include <QStringList>
 
 CommitModel::CommitModel(QObject *parent) :
-    QAbstractListModel(parent)
+    QAbstractListModel(parent), _abort(false)
 {
 }
 
@@ -51,6 +51,19 @@ void CommitModel::appendRow(QSharedPointer<DataObject> data)
     endInsertRows();
 }
 
+bool CommitModel::abort()
+{
+    return _abort;
+}
+
+void CommitModel::setAbort(bool value)
+{
+    if (value == _abort)
+        return;
+    _abort = value;
+    abortChanged();
+}
+
 void CommitModel::move(int from, int to)
 {
     if (from < 0 || to < 0 || from >= _items.size() || to >= _items.size())
@@ -78,6 +91,20 @@ void CommitModel::nextOperation(int row)
     if (index == ops.size())
         index = 0;
     item->operation = ops.at(index);
+    auto rowIndex = this->index(row);
+    emit dataChanged(rowIndex, rowIndex);
+}
+
+void CommitModel::setOperation(int row, QString op)
+{
+    if (row < 0 || row >= _items.size())
+        return;
+    QStringList ops;
+    ops << "pick" << "reword" << "edit" << "squash" << "fixup" << "DELETE";
+    if (!ops.contains(op))
+        return;
+    auto& item = _items[row];
+    item->operation = op;
     auto rowIndex = this->index(row);
     emit dataChanged(rowIndex, rowIndex);
 }

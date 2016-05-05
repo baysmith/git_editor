@@ -27,6 +27,9 @@ int main(int argc, char *argv[])
     Mode mode = Unknown;
 
     QScopedPointer<QQmlApplicationEngine> engine(new QQmlApplicationEngine);
+    engine->rootContext()->setContextProperty("abort_editor", QVariant::fromValue(false));
+    QScopedPointer<CommitModel> commitModel(new CommitModel);
+    engine->rootContext()->setContextProperty("commits", commitModel.data());
 
     if (app->arguments()[1].endsWith("COMMIT_EDITMSG")) {
         mode = Edit;
@@ -38,7 +41,6 @@ int main(int argc, char *argv[])
         engine->load(QUrl(QStringLiteral("qrc:/qml/git_editor/edit.qml")));
     }
 
-    QScopedPointer<CommitModel> commitModel;
     if (app->arguments()[1].endsWith("git-rebase-todo")) {
         mode = Rebase;
         QFile file(app->arguments()[1]);
@@ -46,7 +48,6 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
 
         QTextStream in(&file);
-        commitModel.reset(new CommitModel);
         QStringList comments;
         while (!in.atEnd()) {
             QString line = in.readLine().trimmed();
@@ -62,7 +63,6 @@ int main(int argc, char *argv[])
         }
         file.close();
 
-        engine->rootContext()->setContextProperty("commits", commitModel.data());
         engine->rootContext()->setContextProperty("comments", comments.join("\n"));
         engine->load(QUrl(QStringLiteral("qrc:/qml/git_editor/main.qml")));
     }
@@ -73,10 +73,17 @@ int main(int argc, char *argv[])
 
     auto result = app->exec();
 
+    if (commitModel->abort()) {
+        qDebug() << "Aborting";
+        return EXIT_FAILURE;
+    }
+
     if (mode == Rebase) {
         QFile file(app->arguments()[1]);
-        if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            qDebug() << "Unable to open for write" << app->arguments()[1];
             return EXIT_FAILURE;
+        }
 
         QTextStream out(&file);
         for (int row = 0; row < commitModel->rowCount(); ++row) {
@@ -91,8 +98,10 @@ int main(int argc, char *argv[])
         }
     } else if (mode == Edit) {
         QFile file(app->arguments()[1]);
-        if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            qDebug() << "Unable to open for write" << app->arguments()[1];
             return EXIT_FAILURE;
+        }
 
         QTextStream out(&file);
         auto rootObject = engine->rootObjects()[0];
