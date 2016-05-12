@@ -12,6 +12,8 @@ HEADERS += \
 RESOURCES += \
     qml.qrc
 
+RC_FILE = git_editor.rc
+
 OTHER_FILES += \
     qml/git_editor/main.qml \
     qml/git_editor/Draggable.qml \
