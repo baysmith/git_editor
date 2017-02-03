@@ -26,6 +26,8 @@ Item {
             commits.setOperation(index, "fixup");
         } else if (event.key === Qt.Key_D) {
             commits.setOperation(index, "DELETE");
+        } else if (event.key === Qt.Key_T) {
+            model.move(index, 0);
         }
     }
 
