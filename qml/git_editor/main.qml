@@ -6,8 +6,6 @@ Window {
     visible: true
     width: 800
     height: 800
-    x: Screen.width / 2 - width / 2
-    y: Screen.height / 2 - height / 2
 
     function updateWindowSize() {
         height = Math.min(commitList.contentHeight + commentsText.height + 30, 1000);
@@ -15,6 +13,8 @@ Window {
     }
 
     Component.onCompleted: {
+        x = Screen.width / 2 - width / 2;
+        y = Screen.height / 2 - height / 2;
         initTimer.start();
     }
 
