@@ -31,7 +31,8 @@ int main(int argc, char *argv[])
     QScopedPointer<CommitModel> commitModel(new CommitModel);
     engine->rootContext()->setContextProperty("commits", commitModel.data());
 
-    if (app->arguments()[1].endsWith("COMMIT_EDITMSG")) {
+    if (app->arguments()[1].endsWith("COMMIT_EDITMSG")
+            || app->arguments()[1].endsWith("addp-hunk-edit.diff")) {
         mode = Edit;
         QFile file(app->arguments()[1]);
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
