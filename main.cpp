@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
         QStringList comments;
         while (!in.atEnd()) {
             QString line = in.readLine().trimmed();
-            if (line.startsWith('#')) {
+            if (line.startsWith('|')) {
                 comments += line;
             } else if (!line.isEmpty()) {
                 QSharedPointer<DataObject> data(new DataObject);
