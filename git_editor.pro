@@ -1,7 +1,7 @@
 TEMPLATE = app
 
 QT += qml quick
-CONFIG += console c++11
+CONFIG += console c++11 qtquickcompiler 
 
 SOURCES += main.cpp \
     CommitModel.cpp
