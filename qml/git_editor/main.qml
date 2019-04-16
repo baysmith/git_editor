@@ -21,7 +21,7 @@ Window {
     Rectangle {
         id: main
         anchors.fill: parent
-        property string font: "DejaVu Sans Mono"
+        property string font: "Consolas"
         property bool ready: false
 
         focus: true

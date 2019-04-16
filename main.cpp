@@ -5,6 +5,7 @@
 #include "CommitModel.h"
 #include <QtCore/QDebug>
 #include <QtCore/QFile>
+#include <QtGui/QFont>
 #include <QtGui/QGuiApplication>
 #include <QtQml/QQmlApplicationEngine>
 #include <QtQml/QQmlContext>
@@ -23,6 +24,10 @@ int main(int argc, char *argv[])
     qDebug() << app->arguments();
     if (app->arguments().size() < 2)
         return EXIT_FAILURE;
+
+    auto defaultFont = app->font();
+    defaultFont.setPointSize(10);
+    app->setFont(defaultFont);
 
     Mode mode = Unknown;
 
