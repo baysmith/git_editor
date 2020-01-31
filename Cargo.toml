@@ -1,0 +1,25 @@
+[package]
+name = "git-editor"
+version = "0.1.0"
+authors = ["Bradley Smith <bradley@baysmith.com>"]
+edition = "2018"
+build = "build.rs"
+
+[dependencies]
+imgui = { path = "../imgui-rs" }
+imgui-wgpu = { path = "../imgui-wgpu-rs" }
+imgui-winit-support = { path = "../imgui-rs/imgui-winit-support", default-features = false, features = ["winit-20"] }
+preferences = { git = "https://github.com/baysmith/preferences-rs.git" }
+serde = { version = "1.0", features = ["derive"] }
+raw-window-handle = "0.3"
+wgpu = "0.4"
+winapi = "0.3"
+winit = "0.20.0"
+log = "0.4"
+chrono = "0.4"
+env_logger = "0.7"
+image = "0.22"
+clipboard = "0.5"
+
+[build-dependencies]
+winres = "0.1"
