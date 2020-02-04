@@ -113,7 +113,8 @@ fn imgui_app(mut data: Box<dyn AppData>) {
         .with_title(title.to_owned())
         .with_inner_size(data.default_window_size())
         .with_window_icon(Some(icon))
-        .with_resizable(true);
+        .with_resizable(true)
+        .with_visible(false);
     let window = builder.build(&event_loop).unwrap();
     let mut size = window.inner_size();
     let surface = wgpu::Surface::create(&window);
@@ -194,6 +195,7 @@ fn imgui_app(mut data: Box<dyn AppData>) {
                     window_position.0,
                     window_position.1,
                 ));
+                window.set_visible(true);
                 first = false;
             }
             platform.handle_event(imgui.io_mut(), &window, &event);
@@ -236,6 +238,7 @@ fn imgui_app(mut data: Box<dyn AppData>) {
             }
 
             let io = imgui.io_mut();
+            io.config_flags.set(imgui::ConfigFlags::NO_MOUSE_CURSOR_CHANGE, true);
             let now = io.update_delta_time(last_frame_time);
             // Limit frame rate
             if redraw || io.delta_time > frame_rate_ms / 1000.0 {
