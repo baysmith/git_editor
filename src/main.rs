@@ -119,7 +119,7 @@ fn imgui_app(mut data: Box<dyn AppData>) {
     let mut size = window.inner_size();
     let surface = wgpu::Surface::create(&window);
 
-    let (mut device, mut queue) = wgpu::Adapter::request(&wgpu::RequestAdapterOptions {
+    let (device, mut queue) = wgpu::Adapter::request(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::LowPower,
         backends: wgpu::BackendBit::PRIMARY,
     })
@@ -155,7 +155,7 @@ fn imgui_app(mut data: Box<dyn AppData>) {
     let mut platform = WinitPlatform::init(&mut imgui);
     platform.attach_window(imgui.io_mut(), &window, HiDpiMode::Rounded);
 
-    let mut renderer = Renderer::new(
+    let mut renderer = Renderer::new_static(
         &mut imgui,
         &device,
         &mut queue,
@@ -238,7 +238,8 @@ fn imgui_app(mut data: Box<dyn AppData>) {
             }
 
             let io = imgui.io_mut();
-            io.config_flags.set(imgui::ConfigFlags::NO_MOUSE_CURSOR_CHANGE, true);
+            io.config_flags
+                .set(imgui::ConfigFlags::NO_MOUSE_CURSOR_CHANGE, true);
             let now = io.update_delta_time(last_frame_time);
             // Limit frame rate
             if redraw || io.delta_time > frame_rate_ms / 1000.0 {
@@ -252,7 +253,7 @@ fn imgui_app(mut data: Box<dyn AppData>) {
 
                 let font_token = ui.push_font(font);
 
-                if data.frame(&mut ui, &size) {
+                if data.frame(&mut ui, size) {
                     quit = true;
                     *control_flow = winit::event_loop::ControlFlow::Exit;
                 }
@@ -264,7 +265,7 @@ fn imgui_app(mut data: Box<dyn AppData>) {
 
                 platform.prepare_render(&ui, &window);
                 renderer
-                    .render(ui.render(), &mut device, &mut encoder, &frame.view)
+                    .render(ui.render(), &device, &mut encoder, &frame.view)
                     .expect("Rendering failed");
 
                 queue.submit(&[encoder.finish()]);
@@ -281,7 +282,7 @@ fn imgui_app(mut data: Box<dyn AppData>) {
 trait AppData {
     fn default_window_size(&mut self) -> winit::dpi::PhysicalSize<u32>;
     fn init(&mut self, imgui: &imgui::Context);
-    fn frame(&mut self, ui: &mut Ui, size: &winit::dpi::PhysicalSize<u32>) -> bool;
+    fn frame(&mut self, ui: &mut Ui, size: winit::dpi::PhysicalSize<u32>) -> bool;
     fn exit(&mut self);
 }
 
@@ -338,7 +339,7 @@ impl AppData for MessageData {
     fn init(&mut self, imgui: &imgui::Context) {
         self.button_padding = imgui.style().frame_padding;
     }
-    fn frame(&mut self, ui: &mut Ui, size: &winit::dpi::PhysicalSize<u32>) -> bool {
+    fn frame(&mut self, ui: &mut Ui, size: winit::dpi::PhysicalSize<u32>) -> bool {
         let mut quit = false;
         Window::new(im_str!("App"))
             .size(
@@ -348,13 +349,12 @@ impl AppData for MessageData {
             .position([0.0, 0.0], Condition::FirstUseEver)
             .flags(WindowFlags::NO_TITLE_BAR | WindowFlags::NO_MOVE | WindowFlags::NO_RESIZE)
             .build(&ui, || {
-                if ui.is_key_released(VirtualKeyCode::W as u32) {
-                    if ui.is_key_down(VirtualKeyCode::LControl as u32)
-                        || ui.is_key_down(VirtualKeyCode::RControl as u32)
-                    {
-                        quit = true;
-                        return;
-                    }
+                if ui.is_key_released(VirtualKeyCode::W as u32)
+                    && (ui.is_key_down(VirtualKeyCode::LControl as u32)
+                        || ui.is_key_down(VirtualKeyCode::RControl as u32))
+                {
+                    quit = true;
+                    return;
                 }
 
                 let offset = ui.cursor_screen_pos();
@@ -400,7 +400,7 @@ struct RebaseAction {
 
 impl RebaseAction {
     fn new(line: String) -> Self {
-        let mut action_data: Vec<String> = line.splitn(3, " ").map(|s| s.to_string()).collect();
+        let mut action_data: Vec<String> = line.splitn(3, ' ').map(|s| s.to_string()).collect();
         RebaseAction {
             message: action_data.pop().expect("Expected rebase commit message"),
             sha: action_data.pop().expect("Expected rebase sha"),
@@ -444,7 +444,7 @@ impl RebaseData {
         let lines = std::io::BufReader::new(file).lines();
         for line in lines {
             if let Ok(line) = line {
-                if line.starts_with("|") {
+                if line.starts_with('|') {
                     data.comments.push(line);
                 } else if !line.is_empty() {
                     data.actions.push(RebaseAction::new(line));
@@ -465,7 +465,7 @@ impl AppData for RebaseData {
         self.button_padding = imgui.style().frame_padding;
     }
 
-    fn frame(&mut self, ui: &mut Ui, size: &winit::dpi::PhysicalSize<u32>) -> bool {
+    fn frame(&mut self, ui: &mut Ui, size: winit::dpi::PhysicalSize<u32>) -> bool {
         if self.first_frame {
             self.first_frame = false;
             let spacing = 15.0;
@@ -483,144 +483,149 @@ impl AppData for RebaseData {
             )
             .position([0.0, 0.0], Condition::FirstUseEver)
             .flags(WindowFlags::NO_TITLE_BAR | WindowFlags::NO_MOVE | WindowFlags::NO_RESIZE)
-            .build(&ui, || {
-                if ui.is_key_released(VirtualKeyCode::W as u32) {
-                    if ui.is_key_down(VirtualKeyCode::LControl as u32)
-                        || ui.is_key_down(VirtualKeyCode::RControl as u32)
+            .build(
+                &ui,
+                #[allow(clippy::cognitive_complexity)]
+                || {
+                    if ui.is_key_released(VirtualKeyCode::W as u32)
+                        && (ui.is_key_down(VirtualKeyCode::LControl as u32)
+                            || ui.is_key_down(VirtualKeyCode::RControl as u32))
                     {
                         quit = true;
                         return;
                     }
-                }
 
-                let offset = ui.cursor_screen_pos();
+                    let offset = ui.cursor_screen_pos();
 
-                let abort_text = im_str!("Abort");
-                let button_text_size = ui.calc_text_size(&abort_text, true, -1.0);
-                let mut abort_pos = ui.window_content_region_max();
-                let button_size = [
-                    button_text_size[0] + 2.0 * self.button_padding[0],
-                    button_text_size[1] + 2.0 * self.button_padding[1],
-                ];
-                abort_pos[0] -= button_size[0];
-                abort_pos[1] -= button_size[1];
-                ui.set_cursor_screen_pos(abort_pos);
-                if ui.button(abort_text, button_size) {
-                    std::process::exit(1);
-                }
-
-                let mut move_index = None;
-                let mut move_dest = None;
-                if !ui.is_any_item_active() {
-                    if self.drag_index.is_some() && self.drag_dest.is_some() {
-                        move_index = self.drag_index;
-                        move_dest = self.drag_dest;
-                    }
-                    self.drag_index = None;
-                    self.drag_offset = [0.0, 0.0];
-                    self.drag_dest = None;
-                }
-                if !ui.is_mouse_dragging(imgui::MouseButton::Left) {
-                    if let Some(move_index) = move_index {
-                        if let Some(move_dest) = move_dest {
-                            let action = self.actions.remove(move_index);
-                            if move_dest >= self.actions.len() {
-                                self.actions.push(action);
-                            } else {
-                                self.actions.insert(move_dest, action);
-                            }
-                        }
-                    }
-                }
-
-                let mut commit_index = 0;
-                for action in self.actions.iter_mut() {
-                    let mut reorder_offset = 0.0;
-                    let commit_id = ui.push_id(action.sha.as_str());
-                    if let Some(drag_index) = self.drag_index {
-                        if let Some(drag_dest) = self.drag_dest {
-                            if commit_index > drag_index && drag_dest >= commit_index {
-                                reorder_offset = -1.0 * self.item_height;
-                            } else if commit_index < drag_index && drag_dest <= commit_index {
-                                reorder_offset = self.item_height
-                            }
-                        }
-                    }
-                    let mut pos = [
-                        offset[0],
-                        reorder_offset + offset[1] + commit_index as f32 * self.item_height,
+                    let abort_text = im_str!("Abort");
+                    let button_text_size = ui.calc_text_size(&abort_text, true, -1.0);
+                    let mut abort_pos = ui.window_content_region_max();
+                    let button_size = [
+                        button_text_size[0] + 2.0 * self.button_padding[0],
+                        button_text_size[1] + 2.0 * self.button_padding[1],
                     ];
-                    if let Some(index) = self.drag_index {
-                        if commit_index == index {
-                            pos[0] += self.drag_offset[0];
-                            pos[1] += self.drag_offset[1];
+                    abort_pos[0] -= button_size[0];
+                    abort_pos[1] -= button_size[1];
+                    ui.set_cursor_screen_pos(abort_pos);
+                    if ui.button(abort_text, button_size) {
+                        std::process::exit(1);
+                    }
+
+                    let mut move_index = None;
+                    let mut move_dest = None;
+                    if !ui.is_any_item_active() {
+                        if self.drag_index.is_some() && self.drag_dest.is_some() {
+                            move_index = self.drag_index;
+                            move_dest = self.drag_dest;
+                        }
+                        self.drag_index = None;
+                        self.drag_offset = [0.0, 0.0];
+                        self.drag_dest = None;
+                    }
+                    if !ui.is_mouse_dragging(imgui::MouseButton::Left) {
+                        if let Some(move_index) = move_index {
+                            if let Some(move_dest) = move_dest {
+                                let action = self.actions.remove(move_index);
+                                if move_dest >= self.actions.len() {
+                                    self.actions.push(action);
+                                } else {
+                                    self.actions.insert(move_dest, action);
+                                }
+                            }
                         }
                     }
-                    let canvas_max = ui.window_content_region_max();
-                    let sha_string = ImString::new(&action.sha);
-                    ui.set_cursor_screen_pos(pos);
-                    ui.invisible_button(&sha_string, [canvas_max[0] - pos[0], self.line_height]);
-                    if ui.is_item_hovered() {
-                        let draw_list = ui.get_window_draw_list();
-                        let color = if ui.is_item_active() {
-                            im_color!(200, 200, 200)
-                        } else {
-                            im_color!(100, 100, 100)
-                        };
-                        draw_list
-                            .add_rect(pos, [canvas_max[0], pos[1] + self.line_height], color)
-                            .build();
-                        if ui.is_key_pressed(VirtualKeyCode::P as u32) {
-                            action.operation = "pick".to_string();
-                        } else if ui.is_key_pressed(VirtualKeyCode::R as u32) {
-                            action.operation = "reword".to_string();
-                        } else if ui.is_key_pressed(VirtualKeyCode::E as u32) {
-                            action.operation = "edit".to_string();
-                        } else if ui.is_key_pressed(VirtualKeyCode::S as u32) {
-                            action.operation = "squash".to_string();
-                        } else if ui.is_key_pressed(VirtualKeyCode::F as u32) {
-                            action.operation = "fixup".to_string();
-                        } else if ui.is_key_pressed(VirtualKeyCode::B as u32) {
-                            action.operation = "break".to_string();
-                        } else if ui.is_key_pressed(VirtualKeyCode::D as u32) {
-                            action.operation = "drop".to_string();
-                        } else if ui.is_key_pressed(VirtualKeyCode::T as u32) {
+
+                    for (commit_index, action) in self.actions.iter_mut().enumerate() {
+                        let mut reorder_offset = 0.0;
+                        let commit_id = ui.push_id(action.sha.as_str());
+                        if let Some(drag_index) = self.drag_index {
+                            if let Some(drag_dest) = self.drag_dest {
+                                if commit_index > drag_index && drag_dest >= commit_index {
+                                    reorder_offset = -1.0 * self.item_height;
+                                } else if commit_index < drag_index && drag_dest <= commit_index {
+                                    reorder_offset = self.item_height
+                                }
+                            }
+                        }
+                        let mut pos = [
+                            offset[0],
+                            reorder_offset + offset[1] + commit_index as f32 * self.item_height,
+                        ];
+                        if let Some(index) = self.drag_index {
+                            if commit_index == index {
+                                pos[0] += self.drag_offset[0];
+                                pos[1] += self.drag_offset[1];
+                            }
+                        }
+                        let canvas_max = ui.window_content_region_max();
+                        let sha_string = ImString::new(&action.sha);
+                        ui.set_cursor_screen_pos(pos);
+                        ui.invisible_button(
+                            &sha_string,
+                            [canvas_max[0] - pos[0], self.line_height],
+                        );
+                        if ui.is_item_hovered() {
+                            let draw_list = ui.get_window_draw_list();
+                            let color = if ui.is_item_active() {
+                                im_color!(200, 200, 200)
+                            } else {
+                                im_color!(100, 100, 100)
+                            };
+                            draw_list
+                                .add_rect(pos, [canvas_max[0], pos[1] + self.line_height], color)
+                                .build();
+                            if ui.is_key_pressed(VirtualKeyCode::P as u32) {
+                                action.operation = "pick".to_string();
+                            } else if ui.is_key_pressed(VirtualKeyCode::R as u32) {
+                                action.operation = "reword".to_string();
+                            } else if ui.is_key_pressed(VirtualKeyCode::E as u32) {
+                                action.operation = "edit".to_string();
+                            } else if ui.is_key_pressed(VirtualKeyCode::S as u32) {
+                                action.operation = "squash".to_string();
+                            } else if ui.is_key_pressed(VirtualKeyCode::F as u32) {
+                                action.operation = "fixup".to_string();
+                            } else if ui.is_key_pressed(VirtualKeyCode::B as u32) {
+                                action.operation = "break".to_string();
+                            } else if ui.is_key_pressed(VirtualKeyCode::D as u32) {
+                                action.operation = "drop".to_string();
+                            } else if ui.is_key_pressed(VirtualKeyCode::T as u32) {
+                                self.drag_index = Some(commit_index);
+                                self.drag_dest = Some(0);
+                            }
+                        }
+                        if ui.is_item_active() && ui.is_mouse_dragging(imgui::MouseButton::Left) {
                             self.drag_index = Some(commit_index);
-                            self.drag_dest = Some(0);
+                            let delta = ui.io().mouse_delta;
+                            self.drag_offset[1] += delta[1];
+                            let relative_mouse_pos = ui.io().mouse_pos[1] - offset[1];
+                            if relative_mouse_pos >= 0.0 {
+                                self.drag_dest =
+                                    Some((relative_mouse_pos / self.item_height) as usize);
+                            } else {
+                                self.drag_dest = Some(0);
+                            }
                         }
-                    }
-                    if ui.is_item_active() && ui.is_mouse_dragging(imgui::MouseButton::Left) {
-                        self.drag_index = Some(commit_index);
-                        let delta = ui.io().mouse_delta;
-                        self.drag_offset[1] += delta[1];
-                        let relative_mouse_pos = ui.io().mouse_pos[1] - offset[1];
-                        if relative_mouse_pos >= 0.0 {
-                            self.drag_dest = Some((relative_mouse_pos / self.item_height) as usize);
-                        } else {
-                            self.drag_dest = Some(0);
-                        }
+
+                        ui.set_cursor_screen_pos(pos);
+                        ui.text(ImString::new(&action.operation));
+                        ui.same_line(self.columns[0]);
+                        ui.text(ImString::new(&action.sha));
+                        ui.same_line(self.columns[1]);
+                        ui.text(ImString::new(&action.message));
+                        commit_id.pop(&ui);
                     }
 
+                    let pos = [
+                        offset[0],
+                        offset[1] + (self.actions.len() + 2) as f32 * self.item_height,
+                    ];
                     ui.set_cursor_screen_pos(pos);
-                    ui.text(ImString::new(&action.operation));
-                    ui.same_line(self.columns[0]);
-                    ui.text(ImString::new(&action.sha));
-                    ui.same_line(self.columns[1]);
-                    ui.text(ImString::new(&action.message));
-                    commit_id.pop(&ui);
-                    commit_index += 1;
-                }
-
-                let pos = [
-                    offset[0],
-                    offset[1] + (self.actions.len() + 2) as f32 * self.item_height,
-                ];
-                ui.set_cursor_screen_pos(pos);
-                for comment in self.comments.iter() {
-                    let comment_string = ImString::new(comment);
-                    ui.text(comment_string);
-                }
-            });
+                    for comment in self.comments.iter() {
+                        let comment_string = ImString::new(comment);
+                        ui.text(comment_string);
+                    }
+                },
+            );
         quit
     }
 
@@ -633,9 +638,9 @@ impl AppData for RebaseData {
             .expect("Unable to open rebase file");
         for action in self.actions.iter() {
             println!("{} {} {}", action.operation, action.sha, action.message);
-            write!(
+            writeln!(
                 file,
-                "{} {} {}\n",
+                "{} {} {}",
                 action.operation, action.sha, action.message
             )
             .expect("Unable to write to rebase file");
