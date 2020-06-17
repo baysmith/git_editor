@@ -1,55 +1,16 @@
-#![allow(dead_code, unused_imports, unused_macros)]
-use chrono::prelude::*;
 use clipboard::{ClipboardContext, ClipboardProvider};
-use env_logger::fmt::Color;
+use glium::{glutin, Display, Surface};
+use glutin::{dpi::PhysicalSize, window::WindowBuilder, ContextBuilder};
 use image::{GenericImageView, Pixel};
 use imgui::*;
-use imgui_wgpu::Renderer;
+use imgui_glium_renderer::Renderer;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
-use log::{error, info};
-use preferences::{AppInfo, Preferences};
-use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
-use serde::{Deserialize, Serialize};
-use std::io::BufRead;
-use std::io::Write;
-use winapi::um::winuser::{
-    GetWindowLongW, SetWindowLongW, ShowWindow, GWL_EXSTYLE, SW_HIDE, SW_SHOW, WS_EX_APPWINDOW,
-    WS_EX_TOOLWINDOW, WS_VISIBLE,
-};
+use std::io::{BufRead, Write};
 use winit::{
-    event::{ElementState, Event, MouseButton, VirtualKeyCode, WindowEvent},
+    event::{Event, VirtualKeyCode, WindowEvent},
     event_loop::EventLoop,
     platform::desktop::EventLoopExtDesktop,
 };
-
-const APP_INFO: AppInfo = AppInfo {
-    name: "git-editor",
-    author: "baysmith",
-};
-
-#[derive(Serialize, Deserialize, Debug, Default)]
-struct SaveState {
-    window_position: (i32, i32),
-}
-
-impl SaveState {
-    fn new() -> Self {
-        SaveState {
-            window_position: (110, 110),
-        }
-    }
-}
-
-macro_rules! wgpu_color {
-    ($f:ident) => {
-        wgpu::Color {
-            r: $f.0,
-            g: $f.1,
-            b: $f.2,
-            a: $f.3,
-        }
-    };
-}
 
 macro_rules! im_color {
     ($r:expr, $g:expr, $b:expr, $a:expr) => {
@@ -70,12 +31,6 @@ macro_rules! im_color {
     };
 }
 
-macro_rules! v2 {
-    ($x:expr, $y:expr) => {
-        ImVec2 { x: $x, y: $y }
-    };
-}
-
 pub struct ClipboardSupport(ClipboardContext);
 
 impl ClipboardBackend for ClipboardSupport {
@@ -85,13 +40,6 @@ impl ClipboardBackend for ClipboardSupport {
     fn set(&mut self, text: &ImStr) {
         let _ = self.0.set_contents(text.to_str().to_owned());
     }
-}
-
-fn is_mouse_hovering_window(ui: &imgui::Ui) -> bool {
-    ui.is_window_hovered_with_flags(
-        imgui::WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_POPUP
-            | imgui::WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM,
-    )
 }
 
 fn imgui_app(mut data: Box<dyn AppData>) {
@@ -109,36 +57,20 @@ fn imgui_app(mut data: Box<dyn AppData>) {
         .expect("Failed to open icon");
 
     let mut event_loop = EventLoop::new();
-    let builder = winit::window::WindowBuilder::new()
+    let context = ContextBuilder::new().with_vsync(true);
+    let builder = WindowBuilder::new()
         .with_title(title.to_owned())
         .with_inner_size(data.default_window_size())
         .with_window_icon(Some(icon))
         .with_resizable(true)
         .with_visible(false);
-    let window = builder.build(&event_loop).unwrap();
+
+    let display =
+        Display::new(builder, context, &event_loop).expect("Failed to initialize display");
+
+    let gl_window = display.gl_window();
+    let window = gl_window.window();
     let mut size = window.inner_size();
-    let surface = wgpu::Surface::create(&window);
-
-    let (device, mut queue) = wgpu::Adapter::request(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::LowPower,
-        backends: wgpu::BackendBit::PRIMARY,
-    })
-    .unwrap()
-    .request_device(&wgpu::DeviceDescriptor {
-        extensions: wgpu::Extensions {
-            anisotropic_filtering: false,
-        },
-        limits: wgpu::Limits::default(),
-    });
-
-    // Set up swap chain
-    let mut sc_desc = wgpu::SwapChainDescriptor {
-        usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
-        format: wgpu::TextureFormat::Bgra8Unorm,
-        width: size.width as u32,
-        height: size.height as u32,
-        present_mode: wgpu::PresentMode::NoVsync,
-    };
 
     let mut imgui = Context::create();
     imgui.set_ini_filename(None);
@@ -155,30 +87,15 @@ fn imgui_app(mut data: Box<dyn AppData>) {
     let mut platform = WinitPlatform::init(&mut imgui);
     platform.attach_window(imgui.io_mut(), &window, HiDpiMode::Rounded);
 
-    let mut renderer = Renderer::new_static(
-        &mut imgui,
-        &device,
-        &mut queue,
-        sc_desc.format,
-        Some(wgpu_color! { background_color }),
-    );
+    let mut renderer = Renderer::init(&mut imgui, &display).expect("Failed to initialize renderer");
 
     let mut last_frame_time = std::time::Instant::now();
 
-    // let load_result = SaveState::load(&APP_INFO, "save_state");
-    // let save_state = if load_result.is_ok() {
-    //     load_result.unwrap()
-    // } else {
-    //     SaveState::new()
-    // };
     let window_position: (i32, i32) = (
         (1920 - size.width as i32) / 2,
         (1080 - size.height as i32) / 2,
     );
-    // let window_position: (i32, i32) = save_state.window_position;
     let mut first = true;
-
-    let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
     data.init(&imgui);
 
@@ -214,15 +131,6 @@ fn imgui_app(mut data: Box<dyn AppData>) {
                 } => {
                     size = window.inner_size();
 
-                    sc_desc = wgpu::SwapChainDescriptor {
-                        usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
-                        format: wgpu::TextureFormat::Bgra8Unorm,
-                        width: size.width as u32,
-                        height: size.height as u32,
-                        present_mode: wgpu::PresentMode::NoVsync,
-                    };
-
-                    swap_chain = device.create_swap_chain(&surface, &sc_desc);
                     redraw = true;
                 }
                 Event::WindowEvent {
@@ -245,7 +153,8 @@ fn imgui_app(mut data: Box<dyn AppData>) {
             if redraw || io.delta_time > frame_rate_ms / 1000.0 {
                 last_frame_time = now;
 
-                let frame = swap_chain.get_next_texture();
+                let gl_window = display.gl_window();
+                let window = gl_window.window();
                 platform
                     .prepare_frame(io, &window)
                     .expect("Failed to start frame");
@@ -260,15 +169,21 @@ fn imgui_app(mut data: Box<dyn AppData>) {
 
                 font_token.pop(&ui);
 
-                let mut encoder: wgpu::CommandEncoder =
-                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor { todo: 0 });
+                let gl_window = display.gl_window();
+                let mut target = display.draw();
+                target.clear_color_srgb(
+                    background_color.0,
+                    background_color.1,
+                    background_color.2,
+                    background_color.3,
+                );
 
-                platform.prepare_render(&ui, &window);
+                platform.prepare_render(&ui, gl_window.window());
+                let draw_data = ui.render();
                 renderer
-                    .render(ui.render(), &device, &mut encoder, &frame.view)
+                    .render(&mut target, draw_data)
                     .expect("Rendering failed");
-
-                queue.submit(&[encoder.finish()]);
+                target.finish().expect("Failed to swap buffers");
             } else {
                 std::thread::sleep(std::time::Duration::from_millis(
                     ((frame_rate_ms - (io.delta_time * 1000.0)) * 0.8) as u64,
@@ -280,9 +195,9 @@ fn imgui_app(mut data: Box<dyn AppData>) {
 }
 
 trait AppData {
-    fn default_window_size(&mut self) -> winit::dpi::PhysicalSize<u32>;
+    fn default_window_size(&mut self) -> PhysicalSize<u32>;
     fn init(&mut self, imgui: &imgui::Context);
-    fn frame(&mut self, ui: &mut Ui, size: winit::dpi::PhysicalSize<u32>) -> bool;
+    fn frame(&mut self, ui: &mut Ui, size: PhysicalSize<u32>) -> bool;
     fn exit(&mut self);
 }
 
@@ -654,21 +569,6 @@ fn main() {
     if !args.is_empty()
         && (args[0].ends_with("COMMIT_EDITMSG") || args[0].ends_with("addp-hunk-edit.diff"))
     {
-        let env = env_logger::Env::default().filter_or("BAS_LOG_LEVEL", "info");
-
-        env_logger::Builder::from_env(env)
-            .format(|buf, record| {
-                writeln!(
-                    buf,
-                    "{} {} {}: {}",
-                    Local::now().format("%Y-%m-%dT%H:%M:%S"),
-                    buf.default_styled_level(record.level()),
-                    record.target(),
-                    record.args()
-                )
-            })
-            .init();
-
         let data = Box::new(MessageData::new(args[0].clone()));
         imgui_app(data);
     } else {
